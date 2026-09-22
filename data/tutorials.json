@@ -1,0 +1,34 @@
+[
+    {
+        "title": "Beginners Method",
+        "text": "Learn how to solve a Rubik's Cube with the Beginners Method.",
+        "image": "/images/Begginers-Icon.png",
+        "link": "beginner-3x3.html",
+        "difficulty": "Beginner"
+    },
+
+    {
+        "title": "OLL",
+        "text": "Learn OLL algorithms to finish your cube faster.",
+        "image": "/images/Oll-Icon.png",
+        "link": "beginner-oll.html",
+        "difficulty": "Intermediate"
+    },
+    
+    {
+        "title": "PLL",
+        "text": "Learn PLL algorithms to finish your cube faster.",
+        "image": "/images/Pll-Icon.png",
+        "link": "beginner-pll.html",
+        "difficulty": "Intermediate"
+    },
+    {
+        "title": "CFOP",
+        "text": "Learn the CFOP method to solve your cube faster.",
+        "image": "/images/CFOP-Icon.png",
+        "link": "cfop.html",
+        "difficulty": "Advanced"
+    }
+
+
+]

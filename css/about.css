@@ -1,0 +1,114 @@
+#pr-section {
+  background-color: #7b00bd;
+  color: white;
+  text-align: center;
+  padding: clamp(24px,6vw,64px) clamp(16px,4vw,32px);
+}
+#pr-section h4 {
+  font-size: clamp(22px,5.5vw,44px);
+  margin-bottom: 20px;
+}
+
+/* =========================
+   MODERN TABLE STYLE
+========================= */
+#pr-section table {
+  margin: 30px auto;
+  border-collapse: collapse;
+  width: min(92%, 1000px);
+  max-width: 1000px;
+  background: #260042;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0px 0px 20px rgba(0,0,0,0.25);
+}
+
+/* Header */
+#pr-section th {
+  background: #9d38ff;
+  color: white;
+  padding: 16px;
+  font-size: clamp(13px,2.2vw,16px);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Cells */
+#pr-section td {
+  padding: 14px;
+  font-size: clamp(13px,2.4vw,15px);
+  color: #f1d9ff;
+}
+
+/* Zebra rows */
+#pr-section tr:nth-child(even) { background: #32005a; }
+
+/* Hover highlight */
+#pr-section tr:hover {
+  background: #431078;
+  transition: 0.25s ease-in-out;
+}
+
+/* Center all text */
+#pr-section td, #pr-section th { text-align: center; }
+
+/* Links inside table */
+#pr-section a {
+  color: #c98aff;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+#pr-section a:hover { color: #ffffff; }
+
+/* EVENT column (4th): wider + bold */
+#pr-section td:nth-child(4),
+#pr-section th:nth-child(4) {
+  font-weight: bold;
+  font-size: clamp(18px,6vw,28px);
+  -webkit-text-fill-color: white;
+  width: clamp(140px, 24vw, 180px);
+}
+
+/* Column widths (fluid) */
+#pr-section td:nth-child(1),
+#pr-section th:nth-child(1),
+#pr-section td:nth-child(7),
+#pr-section th:nth-child(7) {
+  width: clamp(180px, 28vw, 260px);
+}
+#pr-section td:nth-child(2),
+#pr-section th:nth-child(2),
+#pr-section td:nth-child(6),
+#pr-section th:nth-child(6) {
+  width: clamp(120px, 22vw, 160px);
+}
+#pr-section td:nth-child(3),
+#pr-section th:nth-child(3),
+#pr-section td:nth-child(5),
+#pr-section th:nth-child(5) {
+  width: clamp(96px, 18vw, 130px);
+  font-weight: bold;
+}
+
+/* Fade-in animation utility (kept) */
+.fade-row {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeInRow 0.6s ease forwards;
+}
+@keyframes fadeInRow {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile fallback: horizontal scroll table (keeps structure readable) */
+@media (max-width: 680px) {
+  #pr-section table {
+    width: 96%;
+    max-width: none;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  #pr-section th, #pr-section td { padding: 10px 12px; }
+}

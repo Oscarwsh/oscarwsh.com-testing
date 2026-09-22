@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Oscarwsh | +2 Podcast</title>
+
+    <!-- Base first, then page-specific -->
+    <link rel="stylesheet" href="css/index.css" />
+    <link rel="stylesheet" href="css/podcast.css" />
+
+    <link rel="icon" type="image/x-icon" href="images/+2-icon.png" />
+    <meta name="description"
+        content="A podcast about speedcubing, competitions, and more! Hosted by Oscarwsh, a Swedish/Canadian speedcuber." />
+    <meta name="keywords"
+        content="Oscarwsh, Cubing, Rubik's Cube, Speedcubing, Tutorials, Videos, Personal Records, Competitions, Podcast" />
+    <meta name="author" content="Oscarwsh | Oscar Cederberg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+
+<body>
+
+    <!-- Responsive / Accessible Nav -->
+    <div id="nav-placeholder"></div>
+    <!-- Hero -->
+    <header id="title">
+        <h1>+2 Podcast</h1>
+    </header>
+
+    <hr class="divider" />
+
+    <section id="Basic">
+        <h4><b><u>The +2 Podcast</u></b></h4>
+        <p>
+            +2 Podcast is all about speedcubing and the culture around it.
+            Hosted by Oscarwsh, some episodes include live conversation and viewer interaction.
+            We talk competitions, cubing news, personal experiences, and ways to improve both your cubing and mindset.
+            Whether you're listening live or later, this podcast is a place to think, laugh, and maybe even get a +2
+            along the way.
+        </p>
+    </section>
+
+    <hr class="divider" />
+
+    <section id="Basic" aria-labelledby="listen-heading">
+        <h4 id="listen-heading"><u><b>Where to Listen?</b></u></h4>
+        <p>
+            You can find it on Spotify, Apple Podcasts, and YouTube!
+        </p>
+
+        <!-- Container expected by your CSS -->
+        <div id="podcast-platforms" class="podcast-platforms" role="list">
+            <a href="https://open.spotify.com/show/1R1fgF8S2SaYGap3GMRdHj" target="_blank" rel="noopener noreferrer"
+                aria-label="Listen on Spotify" role="listitem">
+                <img src="images/Spotify.png" alt="Listen on Spotify" loading="lazy" decoding="async" width="180"
+                    height="180">
+            </a>
+
+            <a href="https://podcasts.apple.com/us/podcast/2-podcast/id1869081312" target="_blank"
+                rel="noopener noreferrer" aria-label="Listen on Apple Podcasts" role="listitem">
+                <img src="images/ApplePod.png" alt="Listen on Apple Podcasts" loading="lazy" decoding="async"
+                    width="180" height="180">
+            </a>
+
+            <a href="https://www.youtube.com/playlist?list=PLWYp88PYsmR2qCkyBNxuZjHcmN7UT8Nzu" target="_blank"
+                rel="noopener noreferrer" aria-label="Watch on YouTube" role="listitem">
+                <img src="images/Youtube.png" alt="Watch on YouTube" loading="lazy" decoding="async" width="180"
+                    height="180">
+            </a>
+        </div>
+    </section>
+
+    <hr class="divider" />
+
+    <section id="Basic">
+        <h4><b><u>Latest Release</u></b></h4>
+        <div class="embed-spotify" id="latestEpisode"></div>
+    </section>
+
+    <hr class="divider" />
+
+    <section id="podcast-section">
+        <h2><b><u>Podcast Episodes</u></b></h2>
+        <div class="podcast-carousel" id="podcastCarousel"></div>
+        <button class="podcast-arrow prev">←</button>
+        <button class="podcast-arrow next">→</button>
+    </section>
+
+    <script src="js/podcast.js"></script>
+
+    <hr class="divider" />
+
+    <div id="footer-placeholder"></div>
+
+    <!-- SCRIPTS -->
+    <script src="js/layout.js"></script>
+    <script src="js/nav.js"></script>
+</body>
+
+</html>
