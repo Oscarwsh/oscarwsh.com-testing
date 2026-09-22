@@ -6,7 +6,7 @@ function initializeNav() {
 
     btn.addEventListener("click", () => {
         const isOpen = nav.classList.toggle("open");
-        btn.setAttribute("aria-expanded", isOpen);
+        btn.setAttribute("aria-expanded", String(isOpen));
     });
 
     document.addEventListener("keydown", (e) => {
