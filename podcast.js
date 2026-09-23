@@ -1,6 +1,6 @@
 // ======= +2 PODCAST GLOBAL ARCHITECTURE =======
 const RAW_RSS_URL = "https://anchor.fm"; 
-// Utilizing a high-performance open proxy to cleanly bypass browser CORS security blocks
+// Bypasses browser security layout blocks flawlessly on GitHub Pages
 const SPOTIFY_RSS_URL = `https://corsproxy.io{encodeURIComponent(RAW_RSS_URL)}`;
 
 let EPISODES = [];
@@ -16,17 +16,16 @@ const latestContainer = document.getElementById("latestEpisode");
 function initDynamicPodcast() {
     fetch(SPOTIFY_RSS_URL)
         .then(response => {
-            if (!response.ok) throw new Error('Network response failure');
+            if (!response.ok) throw new Error('Network data sync failure');
             return response.text(); // Read raw XML data stream
         })
         .then(xmlString => {
-            // Native browser XML Parser engine (completely free & unlimited)
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlString, "text/xml");
             const items = xmlDoc.querySelectorAll("item");
 
             if (items && items.length > 0) {
-                // Convert XML nodes list cleanly into a JavaScript array matrix
+                // Map XML nodes list cleanly into a JavaScript array matrix
                 EPISODES = Array.from(items).map(item => {
                     return {
                         title: item.querySelector("title") ? item.querySelector("title").textContent : "",
@@ -35,7 +34,7 @@ function initDynamicPodcast() {
                     };
                 });
 
-                // Fire presentation builder layout layers
+                // Clear out loading placeholders and build view layouts
                 loadLatestEpisode();
                 loadEpisodesCarousel();
             } else {
@@ -43,7 +42,7 @@ function initDynamicPodcast() {
             }
         })
         .catch(err => {
-            console.error("CORS proxy feed link error:", err);
+            console.error("Podcast synchronization crash log:", err);
             showErrorText("Error syncing with your live podcast pipeline.");
         });
 }
@@ -53,30 +52,39 @@ function showErrorText(msg) {
     if (carousel) carousel.innerHTML = `<span style="color:#b3b3b3; font-size:14px;">${msg}</span>`;
 }
 
-// ======= REFINED EMBED ID PARSER =======
+// ======= ROBUST EMBED ID PARSER (FIXED) =======
 function convertToEmbed(episodeData) {
     if (!episodeData) return "https://spotify.com";
     
-    const url = episodeData.link || "";
-    const guid = episodeData.guid || "";
+    let url = episodeData.link || "";
+    let guid = episodeData.guid || "";
     
-    // Pattern 1: URL contains a direct link with /episode/ format
+    if (typeof url !== "string") url = "";
+    if (typeof guid !== "string") guid = "";
+
+    // Pattern 1: Handle standard direct /episode/ layout formatting safely
     if (url.includes("/episode/")) {
         const parts = url.split("/episode/");
-        if (parts[1]) {
+        if (parts && parts.length > 1) {
             const id = parts[1].split("?")[0];
             return `https://spotify.com{id}?theme=0`;
         }
     }
     
-    // Pattern 2: Process direct guid hashes from standard Anchor RSS strings safely
-    const fallbackSource = guid.includes("anchor.fm") ? guid : url;
-    if (fallbackSource.includes("anchor.fm/") || fallbackSource.includes("://spotify.com")) {
-        const cleanUrl = fallbackSource.split("?")[0];
-        const pieces = cleanUrl.split("/");
-        const extractedId = pieces[pieces.length - 1];
-        if (extractedId && extractedId.length > 5) {
-            return `https://spotify.com{extractedId}?theme=0`;
+    // Pattern 2: Convert standard Anchor page links to clean interactive embeds
+    // Converts: .../oscarwsh/episodes/title-e2g1abc -> .../oscarwsh/embed/episodes/title-e2g1abc
+    if (url.includes("anchor.fm") && url.includes("/episodes/")) {
+        const cleanUrl = url.split("?")[0];
+        return cleanUrl.replace("/episodes/", "/embed/episodes/");
+    }
+    
+    // Pattern 3: Fallback translation filter handling for modern podcasters.spotify mapping schemas
+    if (url.includes("podcasters.spotify.com") && url.includes("/episodes/")) {
+        const cleanUrl = url.split("?")[0];
+        const pieces = cleanUrl.split("/episodes/");
+        if (pieces && pieces.length > 1) {
+            const episodeSlugAndId = pieces[1];
+            return `https://anchor.fm{episodeSlugAndId}`;
         }
     }
     
@@ -88,8 +96,7 @@ function convertToEmbed(episodeData) {
 function loadLatestEpisode() {
     if (!latestContainer || EPISODES.length === 0) return;
 
-    // Anchor updates log dynamic feeds with position index 0 matching your absolute newest release record
-    const latest = EPISODES[0]; 
+    const latest = EPISODES[0]; // Index 0 is always your absolute newest release record
     const embedUrl = convertToEmbed(latest);
     
     latestContainer.innerHTML = `
@@ -109,10 +116,9 @@ function loadLatestEpisode() {
 function loadEpisodesCarousel() {
     if (!carousel || EPISODES.length === 0) return;
     
-    // Flush manual strings or loading texts
     carousel.innerHTML = "";
 
-    // Display episodes (RSS lists newest first)
+    // Display all episodes directly out of your live RSS data array
     EPISODES.forEach((episode, i) => {
         const card = document.createElement("div");
         card.className = "podcast-card";
@@ -136,7 +142,6 @@ function loadEpisodesCarousel() {
         carousel.appendChild(card);
     });
 
-    // Invoke observation attachment routines
     setupCarouselObserver();
 }
 
@@ -178,7 +183,7 @@ function scrollCarousel() {
     });
 }
 
-// Bind click event observers to manual arrow toggles safely
+// Bind arrow control event handlers safely
 const nextButton = document.querySelector(".podcast-arrow.next");
 const prevButton = document.querySelector(".podcast-arrow.prev");
 
@@ -200,10 +205,8 @@ if (prevButton) {
     };
 }
 
-// Initialize sliding intervals tracker loop
 setInterval(scrollCarousel, autoScrollInterval);
 
-// ======= GLOBAL EXECUTION SEQUENCE ON DOM READY =======
 document.addEventListener("DOMContentLoaded", () => {
     initDynamicPodcast();
 });
