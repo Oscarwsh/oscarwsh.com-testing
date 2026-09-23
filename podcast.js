@@ -1,7 +1,5 @@
 // ======= +2 PODCAST GLOBAL ARCHITECTURE =======
 const RAW_RSS_URL = "https://anchor.fm"; 
-// Bypasses browser security layout blocks flawlessly on GitHub Pages
-const SPOTIFY_RSS_URL = `https://corsproxy.io{encodeURIComponent(RAW_RSS_URL)}`;
 
 let EPISODES = [];
 let scrollAmount = 0;
@@ -14,18 +12,44 @@ const latestContainer = document.getElementById("latestEpisode");
 
 // ======= CORE INITIALIZATION LOGIC =======
 function initDynamicPodcast() {
-    fetch(SPOTIFY_RSS_URL)
+    // Utilizing a redundant, high-uptime secure API relay matrix that handles anchor layouts cleanly
+    fetch(`https://rss2json.com{encodeURIComponent(RAW_RSS_URL)}&api_key=00000000000000000000000000000000`)
         .then(response => {
-            if (!response.ok) throw new Error('Network data sync failure');
-            return response.text(); // Read raw XML data stream
+            if (!response.ok) throw new Error('Network bridge failure');
+            return response.json();
         })
-        .then(xmlString => {
+        .then(data => {
+            if (data && data.status === 'ok' && data.items && data.items.length > 0) {
+                // Populate universal layout cache array block
+                EPISODES = data.items;
+
+                // Fire presentation builder layout layers
+                loadLatestEpisode();
+                loadEpisodesCarousel();
+            } else {
+                // Fallback attempt: Try loading via an open alternative engine if primary times out
+                fetchDirectXMLFallback();
+            }
+        })
+        .catch(err => {
+            console.warn("Primary fetch bridge failed, attempting direct engine layout fallback...", err);
+            fetchDirectXMLFallback();
+        });
+}
+
+// ======= BACKUP DIRECT XML FETCH PIPELINE =======
+function fetchDirectXMLFallback() {
+    fetch(`https://allorigins.win{encodeURIComponent(RAW_RSS_URL)}`)
+        .then(res => {
+            if (!res.ok) throw new Error('AllOrigins failure');
+            return res.json();
+        })
+        .then(data => {
             const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+            const xmlDoc = parser.parseFromString(data.contents, "text/xml");
             const items = xmlDoc.querySelectorAll("item");
 
             if (items && items.length > 0) {
-                // Map XML nodes list cleanly into a JavaScript array matrix
                 EPISODES = Array.from(items).map(item => {
                     return {
                         title: item.querySelector("title") ? item.querySelector("title").textContent : "",
@@ -33,62 +57,64 @@ function initDynamicPodcast() {
                         guid: item.querySelector("guid") ? item.querySelector("guid").textContent : ""
                     };
                 });
-
-                // Clear out loading placeholders and build view layouts
                 loadLatestEpisode();
                 loadEpisodesCarousel();
             } else {
-                showErrorText("No episodes found in feed.");
+                showErrorText("No episodes found inside public feed.");
             }
         })
-        .catch(err => {
-            console.error("Podcast synchronization crash log:", err);
+        .catch(finalErr => {
+            console.error("All deployment feeds exhausted. Fallback error:", finalErr);
             showErrorText("Error syncing with your live podcast pipeline.");
         });
 }
 
 function showErrorText(msg) {
-    if (latestContainer) latestContainer.innerHTML = `<span style="color:#b3b3b3; font-size:14px;">${msg}</span>`;
-    if (carousel) carousel.innerHTML = `<span style="color:#b3b3b3; font-size:14px;">${msg}</span>`;
+    if (latestContainer) latestContainer.innerHTML = `<span style="color:#b3b3b3; font-size:14px; font-family:sans-serif;">${msg}</span>`;
+    if (carousel) carousel.innerHTML = `<span style="color:#b3b3b3; font-size:14px; font-family:sans-serif;">${msg}</span>`;
 }
 
-// ======= ROBUST EMBED ID PARSER (FIXED) =======
+// ======= ROBUST AND SECURE EMBED CONVERTER =======
 function convertToEmbed(episodeData) {
     if (!episodeData) return "https://spotify.com";
     
-    let url = episodeData.link || "";
-    let guid = episodeData.guid || "";
-    
-    if (typeof url !== "string") url = "";
-    if (typeof guid !== "string") guid = "";
+    // Safely assign properties, managing string formats gracefully
+    const url = String(episodeData.link || "");
+    const guid = String(episodeData.guid || "");
 
-    // Pattern 1: Handle standard direct /episode/ layout formatting safely
+    // Strategy 1: Check if the link has a native Spotify style format
     if (url.includes("/episode/")) {
-        const parts = url.split("/episode/");
-        if (parts && parts.length > 1) {
-            const id = parts[1].split("?")[0];
-            return `https://spotify.com{id}?theme=0`;
+        const urlObj = url.split("?");
+        const baseParts = urlObj[0].split("/episode/");
+        if (baseParts.length > 1) {
+            return `https://spotify.com{baseParts[1]}?theme=0`;
         }
     }
     
-    // Pattern 2: Convert standard Anchor page links to clean interactive embeds
-    // Converts: .../oscarwsh/episodes/title-e2g1abc -> .../oscarwsh/embed/episodes/title-e2g1abc
+    // Strategy 2: Translate native Anchor landing URLs directly to clean iframe setups
     if (url.includes("anchor.fm") && url.includes("/episodes/")) {
         const cleanUrl = url.split("?")[0];
         return cleanUrl.replace("/episodes/", "/embed/episodes/");
     }
-    
-    // Pattern 3: Fallback translation filter handling for modern podcasters.spotify mapping schemas
-    if (url.includes("podcasters.spotify.com") && url.includes("/episodes/")) {
-        const cleanUrl = url.split("?")[0];
-        const pieces = cleanUrl.split("/episodes/");
-        if (pieces && pieces.length > 1) {
-            const episodeSlugAndId = pieces[1];
-            return `https://anchor.fm{episodeSlugAndId}`;
+
+    // Strategy 3: Parse out raw alphanumeric hashes from GUID nodes
+    if (guid.includes("/episodes/")) {
+        const cleanGuid = guid.split("?")[0];
+        const segments = cleanGuid.split("/episodes/");
+        if (segments.length > 1) {
+            return `https://anchor.fm{segments[1]}`;
         }
     }
     
-    // Baseline backup default: Fall back to embedding your main show profile player list
+    // Strategy 4: Handle string components out of fallback trailing parameters
+    const trailingParts = url.split("/");
+    const dynamicSlug = trailingParts[trailingParts.length - 1] || "";
+    if (dynamicSlug.includes("-e") && dynamicSlug.length > 4) {
+        const cleanSlug = dynamicSlug.split("?")[0];
+        return `https://anchor.fm{cleanSlug}`;
+    }
+
+    // Safety Baseline: Mapped straight back to your base profile node container view
     return "https://spotify.com";
 }
 
@@ -96,7 +122,8 @@ function convertToEmbed(episodeData) {
 function loadLatestEpisode() {
     if (!latestContainer || EPISODES.length === 0) return;
 
-    const latest = EPISODES[0]; // Index 0 is always your absolute newest release record
+    // Anchor updates dynamic feeds with position index 0 matching your absolute newest release record
+    const latest = EPISODES[0]; 
     const embedUrl = convertToEmbed(latest);
     
     latestContainer.innerHTML = `
@@ -116,9 +143,10 @@ function loadLatestEpisode() {
 function loadEpisodesCarousel() {
     if (!carousel || EPISODES.length === 0) return;
     
+    // Wipe text placeholders
     carousel.innerHTML = "";
 
-    // Display all episodes directly out of your live RSS data array
+    // Render items smoothly across the container space
     EPISODES.forEach((episode, i) => {
         const card = document.createElement("div");
         card.className = "podcast-card";
@@ -142,6 +170,7 @@ function loadEpisodesCarousel() {
         carousel.appendChild(card);
     });
 
+    // Invoke automated observation attachment routines
     setupCarouselObserver();
 }
 
@@ -183,7 +212,7 @@ function scrollCarousel() {
     });
 }
 
-// Bind arrow control event handlers safely
+// Bind click event observers to manual arrow toggles safely
 const nextButton = document.querySelector(".podcast-arrow.next");
 const prevButton = document.querySelector(".podcast-arrow.prev");
 
@@ -205,8 +234,10 @@ if (prevButton) {
     };
 }
 
+// Initialize sliding intervals tracker loop
 setInterval(scrollCarousel, autoScrollInterval);
 
+// ======= GLOBAL EXECUTION SEQUENCE ON DOM READY =======
 document.addEventListener("DOMContentLoaded", () => {
     initDynamicPodcast();
 });
