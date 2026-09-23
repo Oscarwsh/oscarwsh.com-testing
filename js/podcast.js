@@ -1,32 +1,72 @@
-// ======= EPISODES LIST =======
-const EPISODES = [
-    "https://open.spotify.com/episode/7gXsD7WvGL2vgaL4DcCV73?si=NeyF-brrTg6Su8SG6d32Nw",
-    "https://open.spotify.com/episode/79CaqQBI5lf2UDAgos8sAh?si=BOUCFLcBT7Kc4Qcvuzf2Xg",
-    "https://open.spotify.com/episode/6Do6mlndjDcwQgcDu6338h?si=ArvOZT2ETiGWQXH3EigmXg",
-    "https://open.spotify.com/episode/1JB9ivsNimSci1cSzpYw63?si=vN6WhO3LR-q6alwHP6GvKg",
-    "https://open.spotify.com/episode/3V9gpnBYqOsoGalte7OJJc?si=6JSp_0egRYe-6DlgQoawcw",
-    "https://open.spotify.com/episode/7oawpAszvD3COq1DzkJCMJ?si=lZOhEoLjTLS1Hu9nj1JCTg",
-    "https://open.spotify.com/episode/17dxkU9jCFQSEUlds3Ka0C?si=RCh7xPgzRhGEmp0foTUTvQ",
-    "https://open.spotify.com/episode/0n7YwwqznpfANClkiRnunr?si=0Xx0WxYrSLO0O3L5ykekvg",
-    "https://open.spotify.com/episode/1bLTGVAxudnxVLcyFwJbMq?si=cs5AJAceQwCfOMT4aoQ4rA",
-    "https://open.spotify.com/episode/7wuc3SJbh5LLvUpK56pEFU?si=sucX0ZN-T8iliOFIu1VyHA",
-    "https://open.spotify.com/episode/1nQIcv1UoAgUdN87Yw4kGS?si=zz-pWmGCSU-SGGw8gxrBnQ",
-    "https://open.spotify.com/episode/65XZVz0pKijUB6EOW9HSnM?si=Dz4spTrhRsSf-AEnJBAE6A",
-];
+// ======= +2 PODCAST GLOBAL ARCHITECTURE =======
+// Automatically bound to your live Anchor distribution pipeline
+const SPOTIFY_RSS_URL = "https://anchor.fm"; 
 
-// ======= HELPER FUNCTION =======
-function convertToEmbed(url) {
-    const id = url.split("/episode/")[1].split("?")[0];
-    return `https://open.spotify.com/embed/episode/${id}?theme=0`;
+let EPISODES = [];
+let scrollAmount = 0;
+const scrollStep = 400; // Pixels per slide shift movement
+const autoScrollInterval = 4500; // Slide rotation timing window
+
+// Cache target structural container nodes
+const carousel = document.getElementById("podcastCarousel");
+const latestContainer = document.getElementById("latestEpisode");
+
+// ======= CORE INITIALIZATION LOGIC =======
+function initDynamicPodcast() {
+    // Convert live XML distribution feed data straight to clean JSON notation mapping via proxy
+    fetch(`https://rss2json.com{encodeURIComponent(SPOTIFY_RSS_URL)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok' && data.items.length > 0) {
+                // Populate universal memory matrix. RSS logs newest releases at index item zero (0).
+                EPISODES = data.items;
+
+                // Fire presentation engines
+                loadLatestEpisode();
+                loadEpisodesCarousel();
+            } else {
+                if (latestContainer) latestContainer.innerText = "Failed to sync episodes.";
+                if (carousel) carousel.innerText = "Failed to sync carousel items.";
+            }
+        })
+        .catch(err => {
+            console.error("Error fetching the podcast feed:", err);
+            if (latestContainer) latestContainer.innerText = "Error linking to live feed.";
+            if (carousel) carousel.innerText = "Error linking to live feed.";
+        });
 }
 
-// ======= LATEST EPISODE SECTION =======
-function loadLatestEpisode() {
-    const container = document.getElementById("latestEpisode");
-    if (!container) return;
+// ======= CONVERSION TRANSLATION FILTER MATRIX =======
+function convertToEmbed(episodeData) {
+    if (!episodeData || !episodeData.link) return "";
+    
+    const url = episodeData.link;
+    
+    // Check if link array pattern matching yields explicit episode variables
+    if (url.includes("/episode/")) {
+        const baseParts = url.split("/episode/");
+        const id = baseParts[1].split("?")[0];
+        return `https://spotify.com{id}?theme=0`;
+    }
+    
+    // Fallback translation: Extract raw hash strings mapped straight out of guid markers
+    if (episodeData.guid && episodeData.guid.includes("anchor.fm/")) {
+        const parts = episodeData.guid.split("/");
+        const id = parts[parts.length - 1];
+        // Redirecting back safely into your core open Spotify show window mapping structure
+        return `https://spotify.com`;
+    }
+    
+    return `https://spotify.com`;
+}
 
-    const latest = EPISODES[EPISODES.length - 1]; // newest episode last
-    container.innerHTML = `
+// ======= LATEST RELEASE INJECTION =======
+function loadLatestEpisode() {
+    if (!latestContainer || EPISODES.length === 0) return;
+
+    // Fetch actual target index item 0 (the absolute latest live podcast installment record)
+    const latest = EPISODES[0]; 
+    latestContainer.innerHTML = `
         <iframe
             src="${convertToEmbed(latest)}"
             width="100%"
@@ -39,19 +79,24 @@ function loadLatestEpisode() {
     `;
 }
 
-// ======= CAROUSEL =======
-const carousel = document.getElementById("podcastCarousel");
-
+// ======= DYNAMIC CAROUSEL BUILDER =======
 function loadEpisodesCarousel() {
-    // Reverse order for newest first
-    EPISODES.slice().reverse().forEach((url, i) => {
+    if (!carousel || EPISODES.length === 0) return;
+    
+    // Purge lingering native tracking loaders
+    carousel.innerHTML = "";
+
+    // Loop through global array structures dynamically
+    EPISODES.forEach((episode, i) => {
         const card = document.createElement("div");
         card.className = "podcast-card";
 
-        // Lazy-load: use data-src, load iframe only when near viewport
+        // Assign clean target headings or construct string index identifiers safely
+        const episodeTitle = episode.title || `Episode ${EPISODES.length - i}`;
+
         card.innerHTML = `
             <iframe
-                data-src="${convertToEmbed(url)}"
+                data-src="${convertToEmbed(episode)}"
                 width="100%"
                 height="232"
                 frameborder="0"
@@ -59,13 +104,20 @@ function loadEpisodesCarousel() {
                 loading="lazy"
                 style="border-radius:12px">
             </iframe>
-            <h3 class="podcast-title">Episode ${EPISODES.length - i}</h3>
+            <h3 class="podcast-title" style="font-size: 14px; margin-top: 8px; text-align: center;">${episodeTitle}</h3>
         `;
 
         carousel.appendChild(card);
     });
 
-    // Setup IntersectionObserver for lazy-loading iframes
+    // Fire lazy loading sequence engine
+    setupCarouselObserver();
+}
+
+// ======= LAZY LOADING INTERSECTION OBSERVER =======
+function setupCarouselObserver() {
+    if (!carousel) return;
+
     const observer = new IntersectionObserver(
         (entries, obs) => {
             entries.forEach(entry => {
@@ -85,16 +137,12 @@ function loadEpisodesCarousel() {
     document.querySelectorAll(".podcast-card").forEach(card => observer.observe(card));
 }
 
-// ======= CAROUSEL SCROLL =======
-let scrollAmount = 0;
-const scrollStep = 400; // pixels per move
-const autoScrollInterval = 4500;
-
+// ======= ROTATION TRANSITION INTERFACES =======
 function scrollCarousel() {
-    if (!carousel) return;
+    if (!carousel || EPISODES.length === 0) return;
     scrollAmount += scrollStep;
 
-    // infinite scroll: reset if reach end
+    // Loop index layout variables back to track base positions once maximum bounds are broken
     if (scrollAmount >= carousel.scrollWidth - carousel.clientWidth) {
         scrollAmount = 0;
     }
@@ -105,24 +153,32 @@ function scrollCarousel() {
     });
 }
 
-// ======= ARROWS =======
-document.querySelector(".podcast-arrow.next").onclick = () => {
-    scrollAmount += scrollStep;
-    if (scrollAmount >= carousel.scrollWidth - carousel.clientWidth) scrollAmount = 0;
-    carousel.scrollTo({ left: scrollAmount, behavior: "smooth" });
-};
+// Bind click events on control button systems if they exist on the page
+const nextButton = document.querySelector(".podcast-arrow.next");
+const prevButton = document.querySelector(".podcast-arrow.prev");
 
-document.querySelector(".podcast-arrow.prev").onclick = () => {
-    scrollAmount -= scrollStep;
-    if (scrollAmount < 0) scrollAmount = carousel.scrollWidth - carousel.clientWidth;
-    carousel.scrollTo({ left: scrollAmount, behavior: "smooth" });
-};
+if (nextButton) {
+    nextButton.onclick = () => {
+        if (!carousel) return;
+        scrollAmount += scrollStep;
+        if (scrollAmount >= carousel.scrollWidth - carousel.clientWidth) scrollAmount = 0;
+        carousel.scrollTo({ left: scrollAmount, behavior: "smooth" });
+    };
+}
 
-// ======= AUTO SLIDE =======
+if (prevButton) {
+    prevButton.onclick = () => {
+        if (!carousel) return;
+        scrollAmount -= scrollStep;
+        if (scrollAmount < 0) scrollAmount = carousel.scrollWidth - carousel.clientWidth;
+        carousel.scrollTo({ left: scrollAmount, behavior: "smooth" });
+    };
+}
+
+// Trigger interval slider rotation
 setInterval(scrollCarousel, autoScrollInterval);
 
-// ======= INIT =======
+// ======= GLOBAL EXECUTION SEQUENCE ON DOM READY =======
 document.addEventListener("DOMContentLoaded", () => {
-    loadLatestEpisode();
-    loadEpisodesCarousel();
+    initDynamicPodcast();
 });
