@@ -3,85 +3,74 @@ const SPOTIFY_RSS_URL = "https://anchor.fm";
 
 let EPISODES = [];
 let scrollAmount = 0;
-const scrollStep = 400; // Pixels shifted per slide transition toggle click
-const autoScrollInterval = 4500; // Carousel automated sliding loop interval delay
+const scrollStep = 400; 
+const autoScrollInterval = 4500; 
 
-// Cache target structural container nodes safely from global DOM trees
+// Cache target structural container nodes safely
 const carousel = document.getElementById("podcastCarousel");
 const latestContainer = document.getElementById("latestEpisode");
 
 // ======= CORE INITIALIZATION LOGIC =======
 function initDynamicPodcast() {
-    // Uses AllOrigins proxy to bypass browser security restrictions with zero item caps
-    fetch(`https://allorigins.win{encodeURIComponent(SPOTIFY_RSS_URL)}`)
-        .then(response => {
-            if (response.ok) return response.json();
-            throw new Error('Network response was not ok.');
-        })
-        .then(data => {
-            // Native browser XML Parser engine (completely free & unlimited)
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(data.contents, "text/xml");
-            const items = xmlDoc.querySelectorAll("item");
+    // Pull data directly from Spotify without third-party proxy sites
+    fetch(SPOTIFY_RSS_URL, { 
+        method: 'GET',
+        credentials: 'omit' // Strips cookies to bypass CORS blocks cleanly
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response failure');
+        return response.text(); // Read raw XML directly
+    })
+    .then(xmlString => {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+        const items = xmlDoc.querySelectorAll("item");
 
-            if (items && items.length > 0) {
-                // Convert XML items into a clean JavaScript array list
-                EPISODES = Array.from(items).map(item => {
-                    return {
-                        title: item.querySelector("title") ? item.querySelector("title").textContent : "",
-                        link: item.querySelector("link") ? item.querySelector("link").textContent : "",
-                        guid: item.querySelector("guid") ? item.querySelector("guid").textContent : "",
-                        audioUrl: item.querySelector("enclosure") ? item.querySelector("enclosure").getAttribute("url") : ""
-                    };
-                });
+        if (items && items.length > 0) {
+            // Map XML records straight into your layout array
+            EPISODES = Array.from(items).map(item => {
+                return {
+                    title: item.querySelector("title") ? item.querySelector("title").textContent : "",
+                    link: item.querySelector("link") ? item.querySelector("link").textContent : "",
+                    guid: item.querySelector("guid") ? item.querySelector("guid").textContent : ""
+                };
+            });
 
-                // Fire presentation builder layout layers
-                loadLatestEpisode();
-                loadEpisodesCarousel();
-            } else {
-                showErrorText("No episodes found in feed.");
-            }
-        })
-        .catch(err => {
-            console.error("Error fetching the podcast feed:", err);
-            showErrorText("Error syncing with your live podcast pipeline.");
-        });
+            // Fire presentation engines
+            loadLatestEpisode();
+            loadEpisodesCarousel();
+        } else {
+            showErrorText("No episodes found in feed.");
+        }
+    })
+    .catch(err => {
+        console.error("Direct connection error:", err);
+        showErrorText("Error syncing with your live podcast pipeline.");
+    });
 }
 
 function showErrorText(msg) {
-    if (latestContainer) latestContainer.innerText = msg;
-    if (carousel) carousel.innerText = msg;
+    if (latestContainer) latestContainer.innerHTML = `<span style="color:#b3b3b3; font-size:14px;">${msg}</span>`;
+    if (carousel) carousel.innerHTML = `<span style="color:#b3b3b3; font-size:14px;">${msg}</span>`;
 }
 
-// ======= TRANSLATION TRANSLATOR PIPELINE =======
+// ======= TRANSLATION FILTER MATRIX =======
 function convertToEmbed(episodeData) {
     if (!episodeData) return "https://spotify.com";
     
     const url = episodeData.link || "";
     const guid = episodeData.guid || "";
     
-    // Pattern 1: URL contains a direct link with /episode/ format
+    // Pattern 1: URL contains direct /episode/ layout format
     if (url.includes("/episode/")) {
-        const parts = url.split("/episode/");
-        if (parts[1]) {
-            const id = parts[1].split("?")[0];
-            return `https://spotify.com{id}?theme=0`;
-        }
+        const id = url.split("/episode/")[1].split("?")[0];
+        return `https://spotify.com{id}?theme=0`;
     }
     
-    // Pattern 2: Process direct guid hashes from standard Anchor RSS strings safely
-    if (guid.includes("anchor.fm/") || guid.includes("://spotify.com")) {
-        const cleanGuid = guid.split("?")[0];
-        const pieces = cleanGuid.split("/");
-        const extractedId = pieces[pieces.length - 1];
-        if (extractedId && extractedId.length > 5) {
-            return `https://spotify.com{extractedId}?theme=0`;
-        }
-    }
-
-    // Pattern 3: Process links directly via URL string parsing fallback loops
-    if (url.includes("anchor.fm/") || url.includes("://spotify.com")) {
-        const cleanUrl = url.split("?")[0];
+    // Pattern 2: Extract alphanumeric hash block directly from Anchor GUID structures
+    const fallbackSource = guid.includes("anchor.fm") ? guid : url;
+    if (fallbackSource.includes("anchor.fm/") || fallbackSource.includes("://spotify.com")) {
+        const cleanUrl = fallbackSource.split("?")[0];
         const pieces = cleanUrl.split("/");
         const extractedId = pieces[pieces.length - 1];
         if (extractedId && extractedId.length > 5) {
@@ -89,7 +78,6 @@ function convertToEmbed(episodeData) {
         }
     }
     
-    // Baseline backup default: Fall back to embedding your main show profile player list
     return "https://spotify.com";
 }
 
@@ -97,8 +85,7 @@ function convertToEmbed(episodeData) {
 function loadLatestEpisode() {
     if (!latestContainer || EPISODES.length === 0) return;
 
-    // Anchor updates log dynamic feeds with position index 0 matching your absolute newest release record
-    const latest = EPISODES[0]; 
+    const latest = EPISODES[0]; // Index 0 is always your absolute newest release
     const embedUrl = convertToEmbed(latest);
     
     latestContainer.innerHTML = `
@@ -118,10 +105,8 @@ function loadLatestEpisode() {
 function loadEpisodesCarousel() {
     if (!carousel || EPISODES.length === 0) return;
     
-    // Flush manual strings or loading texts
     carousel.innerHTML = "";
 
-    // Display episodes (RSS lists newest first)
     EPISODES.forEach((episode, i) => {
         const card = document.createElement("div");
         card.className = "podcast-card";
@@ -145,7 +130,6 @@ function loadEpisodesCarousel() {
         carousel.appendChild(card);
     });
 
-    // Invoke observation attachment routines
     setupCarouselObserver();
 }
 
@@ -187,7 +171,7 @@ function scrollCarousel() {
     });
 }
 
-// Bind click event observers to manual arrow toggles safely
+// Bind arrow control listeners
 const nextButton = document.querySelector(".podcast-arrow.next");
 const prevButton = document.querySelector(".podcast-arrow.prev");
 
@@ -209,10 +193,8 @@ if (prevButton) {
     };
 }
 
-// Initialize sliding intervals tracker loop
 setInterval(scrollCarousel, autoScrollInterval);
 
-// ======= GLOBAL EXECUTION SEQUENCE ON DOM READY =======
 document.addEventListener("DOMContentLoaded", () => {
     initDynamicPodcast();
 });
