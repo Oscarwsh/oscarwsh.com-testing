@@ -22,6 +22,7 @@
 
     <!-- Responsive / Accessible Nav -->
     <div id="nav-placeholder"></div>
+
     <!-- Hero -->
     <header id="title">
         <h1>+2 Podcast</h1>
@@ -50,20 +51,20 @@
 
         <!-- Container expected by your CSS -->
         <div id="podcast-platforms" class="podcast-platforms" role="list">
-            <a href="https://open.spotify.com/show/1R1fgF8S2SaYGap3GMRdHj" target="_blank" rel="noopener noreferrer"
-                aria-label="Listen on Spotify" role="listitem">
+            <a href="https://spotify.com" target="_blank" rel="noopener noreferrer" aria-label="Listen on Spotify"
+                role="listitem">
                 <img src="images/Spotify.png" alt="Listen on Spotify" loading="lazy" decoding="async" width="180"
                     height="180">
             </a>
 
-            <a href="https://podcasts.apple.com/us/podcast/2-podcast/id1869081312" target="_blank"
-                rel="noopener noreferrer" aria-label="Listen on Apple Podcasts" role="listitem">
+            <a href="https://apple.com" target="_blank" rel="noopener noreferrer" aria-label="Listen on Apple Podcasts"
+                role="listitem">
                 <img src="images/ApplePod.png" alt="Listen on Apple Podcasts" loading="lazy" decoding="async"
                     width="180" height="180">
             </a>
 
-            <a href="https://www.youtube.com/playlist?list=PLWYp88PYsmR2qCkyBNxuZjHcmN7UT8Nzu" target="_blank"
-                rel="noopener noreferrer" aria-label="Watch on YouTube" role="listitem">
+            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="Watch on YouTube"
+                role="listitem">
                 <img src="images/Youtube.png" alt="Watch on YouTube" loading="lazy" decoding="async" width="180"
                     height="180">
             </a>
@@ -74,27 +75,164 @@
 
     <section id="Basic">
         <h4><b><u>Latest Release</u></b></h4>
-        <div class="embed-spotify" id="latestEpisode"></div>
+        <div class="embed-spotify" id="latestEpisode">Loading latest episode...</div>
     </section>
 
     <hr class="divider" />
 
     <section id="podcast-section">
         <h2><b><u>Podcast Episodes</u></b></h2>
-        <div class="podcast-carousel" id="podcastCarousel"></div>
+        <div class="podcast-carousel" id="podcastCarousel">Loading carousel...</div>
         <button class="podcast-arrow prev">←</button>
         <button class="podcast-arrow next">→</button>
     </section>
 
-    <script src="js/podcast.js"></script>
+    <script>
+        // ======= AUTOMATED SPOTIFY FEED INTEGRATION =======
+        const SPOTIFY_RSS_URL = "https://anchor.fm";
 
-    <hr class="divider" />
+        let EPISODES = [];
+        const carousel = document.getElementById("podcastCarousel");
+        let scrollAmount = 0;
+        const scrollStep = 400; // pixels per move
+        const autoScrollInterval = 4500;
 
-    <div id="footer-placeholder"></div>
+        // Fetch RSS and load into page elements
+        function initDynamicPodcast() {
+            fetch(`https://rss2json.com{encodeURIComponent(SPOTIFY_RSS_URL)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok' && data.items.length > 0) {
+                        // Store the dynamic items array from RSS feed (newest episode is index 0)
+                        EPISODES = data.items;
 
-    <!-- SCRIPTS -->
-    <script src="js/layout.js"></script>
-    <script src="js/nav.js"></script>
-</body>
+                        // Execute display builders
+                        loadLatestEpisode();
+                        loadEpisodesCarousel();
+                    } else {
+                        document.getElementById("latestEpisode").innerText = "Failed to sync episodes.";
+                        if (carousel) carousel.innerText = "Failed to sync carousel items.";
+                    }
+                })
+                .catch(err => {
+                    console.error("Error fetching the podcast feed:", err);
+                    document.getElementById("latestEpisode").innerText = "Error linking to live feed.";
+                    if (carousel) carousel.innerText = "Error linking to live feed.";
+                });
+        }
 
-</html>
+        // Extracts episode GUID/ID from anchor link to generate direct Spotify Embed elements
+        function convertToEmbed(episodeData) {
+            if (!episodeData || !episodeData.link) return "";
+
+            const url = episodeData.link;
+
+            // If the URL already contains the standard episode structure
+            if (url.includes("/episode/")) {
+                const baseParts = url.split("/episode/");
+                const id = baseParts[1].split("?")[0];
+                return `https://spotify.com{id}?theme=0`;
+            }
+
+            // Fallback: If anchor outputs a clean dashboard URL, extract unique hash string from GUID
+            if (episodeData.guid && episodeData.guid.includes("anchor.fm/")) {
+                const parts = episodeData.guid.split("/");
+                const id = parts[parts.length - 1];
+                // Using your explicit show ID link matrix fallback
+                return `https://spotify.com`;
+            }
+
+            return `https://spotify.com`;
+        }
+
+        // Populates the "Latest Release" block
+        function loadLatestEpisode() {
+            const container = document.getElementById("latestEpisode");
+            if (!container || EPISODES.length === 0) return;
+
+            const latest = EPISODES[0]; // RSS feeds list the newest release at index 0
+            container.innerHTML = `
+                <iframe
+                    src="${convertToEmbed(latest)}"
+                    width="100%"
+                    height="232"
+                    frameborder="0"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                    style="border-radius:12px">
+                </iframe>
+            `;
+        }
+
+        // Populates the scrollable slider track
+        function loadEpisodesCarousel() {
+            if (!carousel || EPISODES.length === 0) return;
+
+            carousel.innerHTML = "";
+
+            // Loop through data items to create the view cards
+            EPISODES.forEach((episode, i) => {
+                const card = document.createElement("div");
+                card.className = "podcast-card";
+
+                // Map absolute episode labels or fallback on title strings directly
+                const episodeTitle = episode.title || `Episode ${EPISODES.length - i}`;
+
+                card.innerHTML = `
+                    <iframe
+                        data-src="${convertToEmbed(episode)}"
+                        width="100%"
+                        height="232"
+                        frameborder="0"
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                        loading="lazy"
+                        style="border-radius:12px">
+                    </iframe>
+                    <h3 class="podcast-title" style="font-size: 14px; margin-top: 8px; text-align: center;">${episodeTitle}</h3>
+                `;
+
+                carousel.appendChild(card);
+            });
+
+            setupCarouselObserver();
+        }
+
+        // Setup IntersectionObserver for lazy-loading carousel iframes
+        function setupCarouselObserver() {
+            const observer = new IntersectionObserver(
+                (entries, obs) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const iframe = entry.target.querySelector("iframe");
+                            if (iframe && iframe.dataset.src) {
+                                iframe.src = iframe.dataset.src;
+                                delete iframe.dataset.src;
+                                obs.unobserve(entry.target);
+                            }
+                        }
+                    });
+                },
+                { root: carousel, rootMargin: "200px", threshold: 0.1 }
+            );
+
+            document.querySelectorAll(".podcast-card").forEach(card => observer.observe(card));
+        }
+
+        // ======= AUTOMATIC & MANUAL CAROUSEL SCROLL =======
+        function scrollCarousel() {
+            if (!carousel || EPISODES.length === 0) return;
+            scrollAmount += scrollStep;
+
+            if (scrollAmount >= carousel.scrollWidth - carousel.clientWidth) {
+                scrollAmount = 0;
+            }
+
+            carousel.scrollTo({
+                left: scrollAmount,
+                behavior: "smooth",
+            });
+        }
+
+        // Left/Right Arrow Click Event Observers
+        const nextButton = document.querySelector(".podcast-arrow.next");
+        const prevButton = document.querySelector(".podcast-arrow.prev"); if (nextButton) { nextButton.onclick = () => { if (!carousel) return; scrollAmount += scrollStep; if (scrollAmount >= carousel.scrollWidth - carousel.clientWidth) scrollAmount = 0; carousel.scrollTo({ left: scrollAmount, behavior: "smooth" }); }; } if (prevButton) { prevButton.onclick = () => { if (!carousel) return; scrollAmount -= scrollStep; if (scrollAmount < 0) scrollAmount = carousel.scrollWidth - carousel.clientWidth; carousel.scrollTo({ left: scrollAmount, behavior: "smooth" }); }; }// Run auto-scroll sequence rotationsetInterval(scrollCarousel, autoScrollInterval);// Run routine initialization once DOM structural assets loaddocument.addEventListener("DOMContentLoaded", () => {initDynamicPodcast();});
