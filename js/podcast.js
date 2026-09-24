@@ -1,200 +1,189 @@
-// ======= +2 PODCAST GLOBAL ARCHITECTURE =======
-const SPOTIFY_RSS_URL = "https://anchor.fm"; 
+/**
+ * podcast.js
+ * Fetches the podcast RSS feed, parses the XML, and populates the HTML
+ * elements for the latest episode and the interactive episode carousel.
+ */
 
-let EPISODES = [];
-let scrollAmount = 0;
-const scrollStep = 400; // Pixels shifted per slide transition toggle click
-const autoScrollInterval = 4500; // Carousel automated sliding loop interval delay
+document.addEventListener("DOMContentLoaded", () => {
+    const rssUrl = "https://anchor.fm/s/10d4e7f4c/podcast/rss";
+    const spotifyShowId = "1R1fgF8S2SaYGap3GMRdHj";
+    // Using a reliable CORS proxy to prevent cross-origin issues in the browser
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`;
 
-// Cache target structural container nodes safely from global DOM trees
-const carousel = document.getElementById("podcastCarousel");
-const latestContainer = document.getElementById("latestEpisode");
+    const latestEpisodeContainer = document.getElementById("latestEpisode");
+    const carouselContainer = document.getElementById("podcastCarousel");
+    const prevButton = document.querySelector(".podcast-arrow.prev");
+    const nextButton = document.querySelector(".podcast-arrow.next");
 
-// ======= CORE INITIALIZATION LOGIC =======
-function initDynamicPodcast() {
-    // Utilize public secure RSS-to-JSON engine proxying framework to completely sidestep browser CORS request blockage
-    fetch(`https://rss2json.com{encodeURIComponent(SPOTIFY_RSS_URL)}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data && data.status === 'ok' && data.items && data.items.length > 0) {
-                // Populate global layout cache array block
-                EPISODES = data.items;
+    let episodes = [];
+    let currentIndex = 0;
+    const itemsPerView = 3; // Number of visible items in the carousel at once
 
-                // Fire presentation builder layout layers
-                loadLatestEpisode();
-                loadEpisodesCarousel();
-            } else {
-                if (latestContainer) latestContainer.innerText = "Failed to sync episodes.";
-                if (carousel) carousel.innerText = "Failed to sync carousel items.";
+    renderSpotifyShow();
+
+    function renderSpotifyShow() {
+        const iframe = document.createElement("iframe");
+        iframe.src = `https://open.spotify.com/embed/show/${spotifyShowId}?utm_source=generator`;
+        iframe.title = "Oscarwsh +2 Podcast on Spotify";
+        iframe.loading = "lazy";
+        iframe.allow = "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture";
+        iframe.referrerPolicy = "strict-origin-when-cross-origin";
+        latestEpisodeContainer.replaceChildren(iframe);
+    }
+
+    // Fetch and parse RSS feed
+    fetch(proxyUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
             }
+            return response.text();
         })
-        .catch(err => {
-            console.error("Error fetching the podcast feed:", err);
-            if (latestContainer) latestContainer.innerText = "Error linking to live feed.";
-            if (carousel) carousel.innerText = "Error linking to live feed.";
-        });
-}
-
-// ======= ADVANCED STRING TRANSLATION PIPELINE =======
-function convertToEmbed(episodeData) {
-    if (!episodeData) return "https://spotify.com";
-    
-    const url = episodeData.link || "";
-    const guid = episodeData.guid || "";
-    
-    // Pattern 1: URL contains a direct link with /episode/ format
-    if (url.includes("/episode/")) {
-        const parts = url.split("/episode/");
-        if (parts[1]) {
-            const id = parts[1].split("?")[0];
-            return `https://spotify.com{id}?theme=0`;
-        }
-    }
-    
-    // Pattern 2: Process direct guid hashes from standard Anchor RSS strings safely
-    if (guid.includes("anchor.fm/") || guid.includes("podcasters.spotify.com/")) {
-        const cleanGuid = guid.split("?")[0];
-        const pieces = cleanGuid.split("/");
-        const extractedId = pieces[pieces.length - 1];
-        if (extractedId) {
-            return `https://spotify.com{extractedId}?theme=0`;
-        }
-    }
-
-    // Pattern 3: Process links directly via URL string parsing fallback loops
-    if (url.includes("anchor.fm/") || url.includes("podcasters.spotify.com/")) {
-        const cleanUrl = url.split("?")[0];
-        const pieces = cleanUrl.split("/");
-        const extractedId = pieces[pieces.length - 1];
-        if (extractedId) {
-            return `https://spotify.com{extractedId}?theme=0`;
-        }
-    }
-    
-    // Baseline backup default: Fall back to embedding your main show profile view node context
-    return "https://spotify.com";
-}
-
-// ======= LATEST RELEASE INJECTION =======
-function loadLatestEpisode() {
-    if (!latestContainer || EPISODES.length === 0) return;
-
-    // Anchor updates log dynamic feeds with position index 0 matching your absolute newest release record
-    const latest = EPISODES[0]; 
-    const embedUrl = convertToEmbed(latest);
-    
-    latestContainer.innerHTML = `
-        <iframe
-            src="${embedUrl}"
-            width="100%"
-            height="232"
-            frameborder="0"
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy"
-            style="border-radius:12px; border: none;">
-        </iframe>
-    `;
-}
-
-// ======= DYNAMIC CAROUSEL BUILDER =======
-function loadEpisodesCarousel() {
-    if (!carousel || EPISODES.length === 0) return;
-    
-    // Flush manual strings or loading texts
-    carousel.innerHTML = "";
-
-    // Display episodes (RSS lists newest first)
-    EPISODES.forEach((episode, i) => {
-        const card = document.createElement("div");
-        card.className = "podcast-card";
-
-        const episodeTitle = episode.title || `Episode ${EPISODES.length - i}`;
-        const embedUrl = convertToEmbed(episode);
-
-        card.innerHTML = `
-            <iframe
-                data-src="${embedUrl}"
-                width="100%"
-                height="232"
-                frameborder="0"
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                loading="lazy"
-                style="border-radius:12px; border: none;">
-            </iframe>
-            <h3 class="podcast-title" style="font-size: 14px; margin-top: 8px; text-align: center;">${episodeTitle}</h3>
-        `;
-
-        carousel.appendChild(card);
-    });
-
-    // Invoke observation attachment routines
-    setupCarouselObserver();
-}
-
-// ======= LAZY LOADING INTERSECTION OBSERVER =======
-function setupCarouselObserver() {
-    if (!carousel) return;
-
-    const observer = new IntersectionObserver(
-        (entries, obs) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const iframe = entry.target.querySelector("iframe");
-                    if (iframe && iframe.dataset.src) {
-                        iframe.src = iframe.dataset.src;
-                        delete iframe.dataset.src;
-                        obs.unobserve(entry.target);
+        .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
+        .then(data => {
+            const items = data.querySelectorAll("item");
+            
+            items.forEach(item => {
+                const title = item.querySelector("title")?.textContent || "Untitled Episode";
+                const link = item.querySelector("link")?.textContent || "#";
+                const pubDate = item.querySelector("pubDate")?.textContent || "";
+                const description = item.querySelector("description")?.textContent || "";
+                const enclosureUrl = item.querySelector("enclosure")?.getAttribute("url") || "";
+                
+                // Try to find image (standard rss, itunes:image, or media:content)
+                let imageUrl = "images/+2-icon.png"; // Fallback to your site icon
+                const itunesImage = item.getElementsByTagName("itunes:image")[0];
+                if (itunesImage) {
+                    imageUrl = itunesImage.getAttribute("href");
+                } else {
+                    const channelImage = data.querySelector("channel > image > url");
+                    if (channelImage) {
+                        imageUrl = channelImage.textContent;
                     }
                 }
+
+                // Format publication date safely
+                let formattedDate = pubDate;
+                if (pubDate) {
+                    const dateObj = new Date(pubDate);
+                    if (!isNaN(dateObj)) {
+                        formattedDate = dateObj.toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
+                    }
+                }
+
+                episodes.push({ title, link, formattedDate, description, enclosureUrl, imageUrl });
             });
-        },
-        { root: carousel, rootMargin: "200px", threshold: 0.1 }
-    );
 
-    document.querySelectorAll(".podcast-card").forEach(card => observer.observe(card));
-}
+            if (episodes.length > 0) {
+                renderCarousel(episodes);
+                setupCarouselControls();
+            } else {
+                carouselContainer.textContent = "No episodes found.";
+            }
+        })
+        .catch(error => {
+            console.error("Error loading podcast feed:", error);
+            carouselContainer.textContent = "Failed to load episodes.";
+        });
 
-// ======= ROTATION TRANSITION INTERFACES =======
-function scrollCarousel() {
-    if (!carousel || EPISODES.length === 0) return;
-    scrollAmount += scrollStep;
+    // Render the single topmost latest episode
+    function renderLatestEpisode(episode) {
+        // Strip HTML tags for a clean description snippet if needed
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = episode.description;
+        const cleanDesc = tempDiv.textContent || tempDiv.innerText || "";
+        const shortDesc = cleanDesc.length > 200 ? cleanDesc.substring(0, 200) + "..." : cleanDesc;
 
-    if (scrollAmount >= carousel.scrollWidth - carousel.clientWidth) {
-        scrollAmount = 0;
+        latestEpisodeContainer.innerHTML = `
+            <div class="latest-episode-card" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: center;">
+                <img src="${episode.imageUrl}" alt="${episode.title}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px;" />
+                <div class="latest-episode-details" style="flex: 1; min-width: 250px;">
+                    <span class="episode-date" style="font-size: 0.85rem; color: #666;">Published: ${episode.formattedDate}</span>
+                    <h3 style="margin: 5px 0 10px 0;">${episode.title}</h3>
+                    <p style="margin-bottom: 15px; font-size: 0.95rem; line-height: 1.4;">${shortDesc}</p>
+                    <div class="player-actions" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        ${episode.enclosureUrl ? `<audio controls src="${episode.enclosureUrl}" style="max-width: 100%;"></audio>` : ""}
+                        <a href="${episode.link}" target="_blank" rel="noopener noreferrer" class="listen-btn" style="text-decoration: underline; font-weight: bold; color: inherit;">View Full Episode →</a>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
-    carousel.scrollTo({
-        left: scrollAmount,
-        behavior: "smooth",
-    });
-}
+    // Render all episodes inside the horizontal carousel structure
+    function renderCarousel(episodeList) {
+        carouselContainer.innerHTML = "";
+        
+        // Wrap everything in an inner container to handle CSS layout transformations cleanly
+        const track = document.createElement("div");
+        track.className = "carousel-track";
+        track.style.display = "flex";
+        track.style.transition = "transform 0.4s ease-in-out";
+        track.style.width = "100%";
 
-// Bind click event observers to manual arrow toggles safely
-const nextButton = document.querySelector(".podcast-arrow.next");
-const prevButton = document.querySelector(".podcast-arrow.prev");
+        episodeList.forEach(episode => {
+            const card = document.createElement("div");
+            card.className = "carousel-item";
+            // Adaptive inline styles to make sure items sizing fits flexible responsive viewports
+            card.style.flex = `0 0 calc(${100 / itemsPerView}% - 20px)`;
+            card.style.margin = "0 10px";
+            card.style.boxSizing = "border-box";
 
-if (nextButton) {
-    nextButton.onclick = () => {
-        if (!carousel) return;
-        scrollAmount += scrollStep;
-        if (scrollAmount >= carousel.scrollWidth - carousel.clientWidth) scrollAmount = 0;
-        carousel.scrollTo({ left: scrollAmount, behavior: "smooth" });
-    };
-}
+            card.innerHTML = `
+                <div class="episode-card-inner" style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <img src="${episode.imageUrl}" alt="${episode.title}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; margin-bottom: 10px;" />
+                        <span style="font-size: 0.8rem; color: #777;">${episode.formattedDate}</span>
+                        <h4 style="margin: 5px 0; font-size: 1rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${episode.title}</h4>
+                    </div>
+                    <a href="${episode.link}" target="_blank" rel="noopener noreferrer" style="margin-top: 10px; font-size: 0.9rem; font-weight: bold; text-decoration: underline; color: inherit;">Listen</a>
+                </div>
+            `;
+            track.appendChild(card);
+        });
 
-if (prevButton) {
-    prevButton.onclick = () => {
-        if (!carousel) return;
-        scrollAmount -= scrollStep;
-        if (scrollAmount < 0) scrollAmount = carousel.scrollWidth - carousel.clientWidth;
-        carousel.scrollTo({ left: scrollAmount, behavior: "smooth" });
-    };
-}
+        carouselContainer.appendChild(track);
+        carouselContainer.style.overflow = "hidden";
+        carouselContainer.style.width = "100%";
+    }
 
-// Initialize sliding intervals tracker loop
-setInterval(scrollCarousel, autoScrollInterval);
+    // Handle interactive prev/next button transitions
+    function setupCarouselControls() {
+        if (!prevButton || !nextButton) return;
 
-// ======= GLOBAL EXECUTION SEQUENCE ON DOM READY =======
-document.addEventListener("DOMContentLoaded", () => {
-    initDynamicPodcast();
+        const updateCarouselPosition = () => {
+            const track = carouselContainer.querySelector(".carousel-track");
+            if (!track) return;
+            
+            // Re-calculate active viewport item width dynamically
+            const itemWidth = carouselContainer.offsetWidth / itemsPerView;
+            track.style.transform = `translateX(-${currentIndex * itemWidth}px)`;
+        };
+
+        nextButton.addEventListener("click", () => {
+            const maxIndex = episodes.length - itemsPerView;
+            if (currentIndex < maxIndex) {
+                currentIndex++;
+            } else {
+                currentIndex = 0; // Wrap around to the start
+            }
+            updateCarouselPosition();
+        });
+
+        prevButton.addEventListener("click", () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+            } else {
+                currentIndex = Math.max(0, episodes.length - itemsPerView); // Wrap to the end
+            }
+            updateCarouselPosition();
+        });
+
+        // Maintain accurate styling positioning on browser resize
+        window.addEventListener("resize", updateCarouselPosition);
+    }
 });

@@ -43,6 +43,20 @@
   }
 }
 
+/* ---- SPOTIFY SHOW EMBED ---- */
+.embed-spotify {
+  width: min(100%, 680px);
+  margin: 0 auto;
+}
+
+.embed-spotify iframe {
+  display: block;
+  width: 100%;
+  min-height: 352px;
+  border: 0;
+  border-radius: 12px;
+}
+
 /* ---- PODCAST SECTION ---- */
 #podcast-section {
   background-color: #7b00bd;
