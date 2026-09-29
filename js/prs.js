@@ -1,9 +1,15 @@
-// Initialize your Supabase Client with your verified endpoints
-const SUPABASE_URL = "https://guxghpkgpodczxhlehei.supabase.co"; 
-const SUPABASE_ANON_KEY = "sb_publishable_FrGs6uzjHojBwjIdk_3k5A_VL0uhRTW";
+/**
+ * js/prs.js
+ * Automatically populates Oscar's Personal Records table using the Unofficial WCA API.
+ */
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Your WCA ID
+const WCA_ID = "2025CEDE03"; 
 
+// Make sure the slashes (/) are exactly like this:
+const API_URL = "https://robiningelbrecht.be/" + WCA_ID + ".json";
+
+// Dictionary to translate raw WCA Event IDs into clean display names
 const EVENT_NAMES = {
     "333": "3x3x3 Cube",
     "222": "2x2x2 Cube",
@@ -21,114 +27,136 @@ const EVENT_NAMES = {
     "sq1": "Square-1",
     "444bf": "4x4x4 Blindfolded",
     "555bf": "5x5x5 Blindfolded",
-    "333mbf": "3x3x3 Multi-Blindfolded"
+    "333mbf": "3x3x3 Multi-Blind"
 };
 
-function formatWcaTime(cents, eventId) {
-    if (!cents || cents === -1) return "DNF";
-    if (cents === -2) return "DNS";
-    if (eventId === "333fm") return cents.toString();
-
-    const seconds = cents / 100;
-    if (seconds < 60) return seconds.toFixed(2);
+/**
+ * Converts WCA centiseconds format into a standard readable cubing time string.
+ */
+function formatWcaTime(centiseconds) {
+    if (centiseconds === undefined || centiseconds === null || centiseconds <= 0) {
+        if (centiseconds === -1) return "DNF";
+        if (centiseconds === -2) return "DNS";
+        return "—";
+    }
     
-    const mins = Math.floor(seconds / 60);
-    const remainingSecs = (seconds % 60).toFixed(2);
-    return `${mins}:${remainingSecs.padStart(5, '0')}`;
+    let totalSeconds = centiseconds / 100;
+    
+    // If the time is 1 minute or longer
+    if (totalSeconds >= 60) {
+        const minutes = Math.floor(totalSeconds / 60);
+        const remainderSeconds = (totalSeconds % 60).toFixed(2);
+        const paddedSeconds = remainderSeconds < 10 ? '0' + remainderSeconds : remainderSeconds;
+        return minutes + ":" + paddedSeconds;
+    }
+    
+    // For times under a minute
+    return totalSeconds.toFixed(2);
 }
 
-function createRecordCell(value, url) {
-    const cell = document.createElement("td");
+// Fetch data as soon as the HTML document is fully loaded
+document.addEventListener("DOMContentLoaded", function() {
+    const tableBody = document.getElementById("personal-records-body");
 
-    if (url && value && value !== "—" && value !== "N/A") {
-        const link = document.createElement("a");
-        link.href = url;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.textContent = value;
-        cell.appendChild(link);
-    } else {
-        cell.textContent = value || "—";
+    if (!tableBody) {
+        console.error("Could not find an HTML element with id='personal-records-body'");
+        return;
     }
 
-    return cell;
-}
+    fetch(API_URL)
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error("HTTP Error! Status: " + response.status);
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            // Clear out the "Loading..." row from HTML
+            tableBody.innerHTML = "";
 
-function renderPersonalRecords(groupedRecords) {
-    const body = document.querySelector("#personal-records-body");
-    if (!body) return;
+            let singles = [];
+            let averages = [];
 
-    body.replaceChildren();
+            if (data.ranks) {
+                singles = data.ranks.singles || [];
+                averages = data.ranks.averages || [];
+            } else {
+                singles = data.singles || [];
+                averages = data.averages || [];
+            }
 
-    Object.values(groupedRecords).forEach((record, index) => {
-        const row = document.createElement("tr");
-        row.className = "fade-row";
-        row.style.animationDelay = `${index * 40}ms`;
+            // Map container to merge single and average data objects together by eventId
+            const combinedRecords = {};
 
-        row.append(
-            createRecordCell(record.singleCompetition, record.singleUrl),
-            createRecordCell(record.singleDate),
-            createRecordCell(record.single),
-            createRecordCell(record.event),
-            createRecordCell(record.average),
-            createRecordCell(record.averageDate),
-            createRecordCell(record.averageCompetition, record.averageUrl)
-        );
-
-        body.appendChild(row);
-    });
-}
-
-async function loadPersonalRecords() {
-    try {
-        const { data: rows, error } = await supabase
-            .from('personal_records')
-            .select('*');
-
-        if (error) throw error;
-        if (!rows || rows.length === 0) {
-            document.querySelector("#personal-records-body").innerHTML = `<tr><td colspan="7">No records found. Trigger your GitHub Action to load data!</td></tr>`;
-            return;
-        }
-
-        const recordsGroupedByEvent = {};
-
-        rows.forEach(row => {
-            const id = row.event_id;
-            if (!recordsGroupedByEvent[id]) {
-                recordsGroupedByEvent[id] = {
-                    event: EVENT_NAMES[id] || id,
-                    single: "—", singleDate: "—", singleCompetition: "—", singleUrl: null,
-                    average: "—", averageDate: "—", averageCompetition: "—", averageUrl: null
+            // 1. Process Singles
+            singles.forEach(function(item) {
+                if (!item.eventId) return;
+                combinedRecords[item.eventId] = {
+                    eventId: item.eventId,
+                    eventName: EVENT_NAMES[item.eventId] || item.eventId,
+                    singleBest: formatWcaTime(item.best),
+                    singleComp: item.competitionId || "—",
+                    averageBest: "—",
+                    averageComp: "—"
                 };
+            });
+
+            // 2. Process Averages
+            averages.forEach(function(item) {
+                if (!item.eventId) return;
+                if (!combinedRecords[item.eventId]) {
+                    combinedRecords[item.eventId] = {
+                        eventId: item.eventId,
+                        eventName: EVENT_NAMES[item.eventId] || item.eventId,
+                        singleBest: "—",
+                        singleComp: "—",
+                    };
+                }
+                combinedRecords[item.eventId].averageBest = formatWcaTime(item.best);
+                combinedRecords[item.eventId].averageComp = item.competitionId || "—";
+            });
+
+            // 3. Convert object map back to an array
+            const finalRecordsArray = Object.values(combinedRecords);
+
+            if (finalRecordsArray.length === 0) {
+                tableBody.innerHTML = "<tr><td colspan='7' style='text-align: center;'>No official personal records found yet!</td></tr>";
+                return;
             }
 
-            const formattedTime = formatWcaTime(row.best_time, id);
-            const compUrl = row.competition_id ? `https://worldcubeassociation.org{row.competition_id}` : null;
-            
-            let displayDate = row.competition_date || "—";
+            // 4. Sort arrays according to standard official WCA event display list
+            const eventOrder = Object.keys(EVENT_NAMES);
+            finalRecordsArray.sort(function(a, b) {
+                let indexA = eventOrder.indexOf(a.eventId);
+                let indexB = eventOrder.indexOf(b.eventId);
+                if (indexA === -1) indexA = 999;
+                if (indexB === -1) indexB = 999;
+                return indexA - indexB;
+            });
 
-            if (row.type === 'single') {
-                const target = recordsGroupedByEvent[id];
-                target.single = formattedTime;
-                target.singleCompetition = row.competition_name || "Official Competition";
-                target.singleUrl = compUrl;
-                target.singleDate = displayDate;
-            } else if (row.type === 'average') {
-                const target = recordsGroupedByEvent[id];
-                target.average = formattedTime;
-                target.averageCompetition = row.competition_name || "Official Competition";
-                target.averageUrl = compUrl;
-                target.averageDate = displayDate;
-            }
+            // 5. Build individual row blocks inside the HTML template matches Oscar's layout:
+            // Competition | Date | Single | Event | Average | Date | Competition
+            finalRecordsArray.forEach(function(record) {
+                const row = document.createElement("tr");
+
+                row.innerHTML = "<td>" + record.singleComp + "</td>" +
+                                "<td>—</td>" +
+                                "<td><strong>" + record.singleBest + "</strong></td>" +
+                                "<td><strong>" + record.eventName + "</strong></td>" +
+                                "<td><strong>" + record.averageBest + "</strong></td>" +
+                                "<td>—</td>" +
+                                "<td>" + record.averageComp + "</td>";
+
+                tableBody.appendChild(row);
+            });
+        })
+        .catch(function(error) {
+            console.error("Detailed Fetch Error:", error);
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="color: #ff4d4d; text-align: center; padding: 20px; font-weight: bold;">
+                        No official WCA records found yet. Profile data updates daily.
+                    </td>
+                </tr>`;
         });
-
-        renderPersonalRecords(recordsGroupedByEvent);
-
-    } catch (error) {
-        console.error("Could not load WCA records from Supabase:", error);
-        document.querySelector("#personal-records-body").innerHTML = `<tr><td colspan="7" style="color:red;">Error connecting to database. Check console logs.</td></tr>`;
-    }
-}
-
-loadPersonalRecords();
+});
